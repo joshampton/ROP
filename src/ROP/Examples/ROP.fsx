@@ -5,10 +5,17 @@ open ROP
 type Request = {name: string; email: string}
 
 // Vocabulary
-// one-track: accepts or returns single value
-// two-track: accepts or returns Result<'TSuccess, `TError>  
-// regular function: accepts one-track input and returns one-track output
+
+// two-track function: accepts or returns Result<'TSuccess, `TError>  
+// Result<`TSuccess, `TError> r -> Success
+//                              -> Error
+
+// one-track / regular function: accepts one-track input and returns one-track output
+// x -> y
+
 // switch function: accepts one-track input and returns two-track output
+// x -> Success 
+//   -> Error
 
 // single function example
 let validateInput input =
@@ -89,15 +96,12 @@ exception Error of string
 let throws input =
     raise (Error("Hello World"))
 
-let additionalStep =
-    tryCatch (tee throws) (fun ex -> ex.Message)
-
 let emailPipeline4 =
     validate1
     >> bind validate2
     >> bind validate3
     >> map formatEmail
     >> map (tee doNothing)
-    >> bind additionalStep
+    >> bind (tryCatch (tee throws)(fun ex -> ex.Message))
 
 emailPipeline4 {name = "Josh"; email = "WHY ARE WE YELLING"}
